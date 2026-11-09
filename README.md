@@ -45,7 +45,7 @@ Two complete self-play games against a random-move "human" (`npx tsx scripts/sel
 
 `pnpm verify` runs every gate in the same order as CI: lint, type check, unit tests, integration tests, the production build, a production dependency audit (high severity and above) and the browser end-to-end suite. `pnpm verify --skip-e2e` is the quick local version.
 
-**CI.** GitHub Actions (`.github/workflows/ci.yml`) runs the same gates on every pull request and every push to `main`, as four parallel jobs:
+**CI.** The repository is `github.com/ryamgoh/checkers-vs-jev` (private). Once turned on (see below), GitHub Actions runs the same gates on every pull request and every push to `main`, as four parallel jobs:
 
 - quality: lint, types, unit and integration tests;
 - build and audit: also uploads `dist/`;
@@ -54,9 +54,18 @@ Two complete self-play games against a random-move "human" (`npx tsx scripts/sel
 
 Dependabot opens weekly, grouped updates for npm packages, Actions and the Docker base image.
 
+**Turn on GitHub Actions (one-time, repository owner).** The workflow is stored as a template in `ci/github-actions/ci.yml`. GitHub does not let the Manus GitHub App create or change files under `.github/workflows/`, so the owner moves it there once:
+
+1. On GitHub, open `ci/github-actions/ci.yml` and click the pencil icon (Edit).
+2. Change the file name at the top to `.github/workflows/ci.yml`, then commit to `main`.
+
+Or, from a clone authenticated as you: `git mv ci/github-actions/ci.yml .github/workflows/ci.yml && git commit -m "Turn on CI" && git push`.
+
+The first run starts immediately and appears under the repository's **Actions** tab. Manus pushes keep working afterwards, as long as they don't touch `.github/workflows/`. Change the workflow itself on GitHub, or let Dependabot update it.
+
 **Delivery.** The app is hosted on Manus. The Dockerfile builds the client and runs the Fastify server, which serves the client and the API on one origin. The platform waits for `GET /api/health` before routing traffic to a new version. `OPENROUTER_API_KEY` comes from the project's secrets at runtime, never from the image or the repository. Each commit accepted on `main` is a Manus checkpoint (a saved version). Publishing deploys a checkpoint, and Version history can roll back to an earlier one.
 
-**Releasing.** Commit, then run `pnpm release`. It refuses a dirty working tree or a branch that is missing commits from `origin/main`, runs `pnpm verify` on exactly that commit, and pushes to `main` only if every gate passes. Publish the new checkpoint from the Manus Dashboard, or turn on auto-publish there to deploy every checkpoint. Once the repository is on GitHub, the usual flow is a pull request that merges after CI passes. Making the CI checks *required* on `main` needs branch protection, which GitHub offers on private repositories only with a paid plan.
+**Releasing.** Commit, then run `pnpm release`. It refuses a dirty working tree or a branch that is missing commits from `origin/main`, runs `pnpm verify` on exactly that commit, and pushes to `main` only if every gate passes. Publish the new checkpoint from the Manus Dashboard, or turn on auto-publish there to deploy every checkpoint. Day to day, the usual flow is a pull request that merges after CI passes; merging to `main` records a checkpoint. Making the CI checks *required* on `main` needs branch protection, which GitHub offers on private repositories only with a paid plan.
 
 **Hosting mode.** Autoscale (the default), which costs nothing while idle. Games live in server memory, so if the platform sleeps an idle instance, adds a second one or publishes a new version, a game in progress can be lost; the client then offers a new game. For always-available games, switch to Reserved (a single always-on instance, usage-billed) in the Dashboard's hosting settings, or move game state to a shared store.
 
