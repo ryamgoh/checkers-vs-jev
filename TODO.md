@@ -29,10 +29,10 @@ engine is Jev basically"), "CICD this, and then publish this", and the confirmed
   dependency audit, and a container image build-and-boot smoke test (`.github/workflows/ci.yml`; locally `pnpm verify`).
 - [x] **Deployment configuration.** A Dockerfile builds and runs the Fastify server serving the client, with an
   unauthenticated health endpoint at `/api/health`, declared to Manus as the container deploy.
-- [ ] **Environment-based OpenRouter credentials in production.** The published server reads `OPENROUTER_API_KEY` from
-  project secrets, never from the image or repository.
-- [ ] **Continuous delivery with a documented release setup.** Only commits that pass every gate reach `main`
+- [x] **Environment-based OpenRouter credentials in production.** The published server reads `OPENROUTER_API_KEY` from
+  project secrets, never from the image or repository. (Declared as a project secret, configured for all environments.)
+- [x] **Continuous delivery with a documented release setup.** Only commits that pass every gate reach `main`
   (`pnpm release`); each accepted `main` commit is a Manus checkpoint that can be published; the release flow is
-  documented in the README.
+  documented in the README. Hosting: default Autoscale (Reserved was declined; trade-off documented in the README).
 - [ ] **CI runs on GitHub.** The repository lives on GitHub so the Actions workflow runs on pushes and pull requests.
 - [ ] **Published.** The game is published at a public URL and plays end-to-end against live Jev there.

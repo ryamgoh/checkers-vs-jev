@@ -58,7 +58,7 @@ Dependabot opens weekly, grouped updates for npm packages, Actions and the Docke
 
 **Releasing.** Commit, then run `pnpm release`. It refuses a dirty working tree or a branch that is missing commits from `origin/main`, runs `pnpm verify` on exactly that commit, and pushes to `main` only if every gate passes. Publish the new checkpoint from the Manus Dashboard, or turn on auto-publish there to deploy every checkpoint. Once the repository is on GitHub, the usual flow is a pull request that merges after CI passes. Making the CI checks *required* on `main` needs branch protection, which GitHub offers on private repositories only with a paid plan.
 
-**Hosting mode.** Reserved, a single always-on instance. Games live in server memory and the AI job keeps running between requests. Autoscale could send a player to a different instance mid-game, or put an idle instance to sleep.
+**Hosting mode.** Autoscale (the default), which costs nothing while idle. Games live in server memory, so if the platform sleeps an idle instance, adds a second one or publishes a new version, a game in progress can be lost; the client then offers a new game. For always-available games, switch to Reserved (a single always-on instance, usage-billed) in the Dashboard's hosting settings, or move game state to a shared store.
 
 ## Configuration (environment)
 
