@@ -5,7 +5,7 @@ import Fastify, { type FastifyReply, type FastifyRequest } from 'fastify';
 import fastifyStatic from '@fastify/static';
 import { CommandRequestSchema, type CommandResponse, type Snapshot } from '../../shared/contracts/index.ts';
 import type { GameStore } from '../game/store.ts';
-
+import { isCrossSiteWrite, ownerCookie } from './security.ts';
 const OWNER_COOKIE = 'cvj_owner';
 
 export interface AppOptions {
@@ -27,8 +27,7 @@ function ensureOwner(req: FastifyRequest, reply: FastifyReply): string {
   const existing = readOwner(req);
   if (existing && /^[0-9a-f-]{36}$/.test(existing)) return existing;
   const id = randomUUID();
-  const secure = req.headers['x-forwarded-proto'] === 'https' ? '; Secure' : '';
-  reply.header('set-cookie', `${OWNER_COOKIE}=${id}; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400${secure}`);
+  reply.header('set-cookie', ownerCookie(OWNER_COOKIE, id, req.headers));
   return id;
 }
 
@@ -37,14 +36,13 @@ const STATUS: Record<string, number> = { stale: 409, 'not-found': 404, forbidden
 export async function buildApp(opts: AppOptions) {
   const app = Fastify({ logger: false, bodyLimit: 16 * 1024, trustProxy: true });
 
-  // Cross-site write protection: JSON-only writes, and a same-origin check when Origin is sent.
+  // Cross-site write protection: JSON-only writes (forces a CORS preflight we never grant) plus a
+  // same-site check that survives proxies rewriting Host.
   app.addHook('onRequest', async (req, reply) => {
     if (req.method !== 'POST') return;
     const type = req.headers['content-type'] ?? '';
     if (!type.startsWith('application/json')) return reply.code(415).send({ ok: false, error: 'bad-request', message: 'JSON required.' });
-    const origin = req.headers.origin;
-    const host = req.headers['x-forwarded-host'] ?? req.headers.host;
-    if (origin && host && new URL(origin).host !== host) {
+    if (isCrossSiteWrite(req.headers)) {
       return reply.code(403).send({ ok: false, error: 'forbidden', message: 'Cross-origin request rejected.' });
     }
   });
