@@ -2,7 +2,7 @@
 # Production image: builds the three.js client, then runs the Fastify server (which also serves dist/).
 # Secrets such as OPENROUTER_API_KEY are read from the runtime environment only, never at build time.
 
-FROM node:22-bookworm-slim AS base
+FROM node:26-bookworm-slim AS base
 WORKDIR /app
 # pnpm version is pinned by package.json "packageManager".
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
