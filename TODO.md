@@ -35,4 +35,7 @@ engine is Jev basically"), "CICD this, and then publish this", and the confirmed
   (`pnpm release`); each accepted `main` commit is a Manus checkpoint that can be published; the release flow is
   documented in the README. Hosting: default Autoscale (Reserved was declined; trade-off documented in the README).
 - [ ] **CI runs on GitHub.** The repository lives on GitHub so the Actions workflow runs on pushes and pull requests.
-- [ ] **Published.** The game is published at a public URL and plays end-to-end against live Jev there.
+- [x] **Published.** The game is published and plays end-to-end against live Jev there: version 62f8c56 at
+  https://checkers-fhpj2xmn.manus.space (visibility: private to the owner until changed in the publish card).
+  Live check with the client's event stream open: three Jev replies in 1.9–2.4 s, each with engine analysis and each
+  matching the engine's best move; cross-site writes refused (403); key absent from the page.

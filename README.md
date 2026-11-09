@@ -91,4 +91,5 @@ All writes are JSON and owned by an HttpOnly cookie. Over HTTPS the cookie is `S
 - **"Optimal" means practically optimal.** Marcher is a strong heuristic search, not an endgame-database solver, and Jev occasionally picks a lower-rated move (3 of 29 in the measured games). Those moves are tagged in the history.
 - Games live in server memory: a server restart ends them, and the client then offers a new game.
 - Publishing a new version restarts the server, which ends games in progress.
+- On Autoscale the server gets CPU only while a request is open. The client's live event stream (`/events`) keeps a request open during Jev's turn, so analysis and Jev's reply run at full speed. Measured on the published site with the stream open: 1.9–2.4 s per reply, with engine analysis. Without it (polling only), one reply took 16 s and missed the analysis. Reserved hosting removes this dependency. `node scripts/diag/sse-probe.mjs <url>` reproduces the measurement.
 - Headless browsers without a GPU render at about 1 fps. The board uses on-demand rendering, so it draws nothing while idle and animates at full frame rate on real hardware.
