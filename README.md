@@ -1,0 +1,73 @@
+# Checkers vs Jev
+
+A 3D American checkers game in the browser. You play red against **Jev**, which chooses every opponent move. Before each Jev decision, the **Marcher** search engine evaluates every legal move. Jev gets all legal moves, each labelled with its evaluation, and picks one. The server never swaps in a move of its own.
+
+![Board after Jev's reply](docs/screenshots/desktop-5-replied.png)
+
+## Run it
+
+You need Node 22+ and pnpm. The OpenRouter key is read **only on the server** from the environment. It is never sent to the browser.
+
+```bash
+pnpm install
+export OPENROUTER_API_KEY=sk-or-...        # server-side only
+pnpm build                                  # builds the client into dist/
+pnpm start                                  # serves dist/ and the API on http://localhost:3000
+```
+
+For development, run `pnpm dev:server` and `pnpm dev:client` (Vite on :5173 proxies `/api` to :3000).
+
+## How a turn works
+
+1. You make a move on the board, either by clicking pieces in the 3D view or with the keyboard via the "Your moves" list. The client shows it immediately and sends it to the server, which validates it.
+2. The server starts one cancellable AI job. Marcher (WASM, in a worker thread) scores every legal reply within `ENGINE_BUDGET_MS`.
+3. The server calls the Decisions API (`POST /api/alpha/decisions`, model `JEV_MODEL`) with one *choice* question. Each legal move is an option, annotated with Marcher's label: "best move", "about equal", "worse by about 1.5 men", "wins by force", and so on.
+4. Jev's choice is checked against the legal moves and committed. The client animates it from the snapshot it receives over server-sent events.
+5. If only one move is legal, it is played as *forced* without calling Jev. If Jev refuses, times out after one retry, or returns an unknown move, the game shows **Jev unavailable** with **Retry**. No substitute move is made.
+
+Pause cancels an in-flight AI job; Resume starts a fresh one. Restart, which asks for confirmation, and Play again after a finished game invalidate any late result through a job-id and generation check. Each history entry for Jev's moves is tagged *engine best*, *lower-rated*, *forced* or *unanalyzed*.
+
+## Measured (9 Nov 2026, live Jev `typesafe/jev-1.14`)
+
+Two complete self-play games against a random-move "human" (`npx tsx scripts/selfplay.ts 2`): Jev won both, after 42 and 46 plies. Over 29 non-forced decisions, AI latency was p50 2.2 s, p95 2.8 s and max 4.2 s, against the spec's 5 s p95 target. Jev's choice matched Marcher's top score in 26 of 29 decisions. Jev costs about $0.00003 per call.
+
+## Tests
+
+| Command | What it covers |
+|---|---|
+| `pnpm test` | Rules (perft 1–8 equals the published reference, captures, promotion, draws), lifecycle reducer, opponent, Jev client, click-selection and display model |
+| `pnpm test:integration` | Marcher equivalence on 300 random positions, ranking and cancellation, plus the HTTP API: ownership, stale versions, idempotency, pause and restart races, AI errors, SSE, key secrecy |
+| `pnpm e2e` | Playwright against the production build with a fake Decisions server (`tests/e2e/fake-openrouter.mjs`): start, canvas play, illegal clicks, keyboard, pause mid-decision, restart confirm, Jev failure and Retry, refresh restore, a full game to the result and Play again |
+
+## Configuration (environment)
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `OPENROUTER_API_KEY` | — | Required for Jev. Without it, Start is disabled with an explanation |
+| `JEV_MODEL` | `typesafe/jev-1.14` | Decisions model |
+| `JEV_TIMEOUT_MS` | `5000` | Per-call timeout (one retry for transient failures) |
+| `JEV_MAX_CALLS_PER_DAY` | `2000` | Spend ceiling |
+| `ENGINE_BUDGET_MS` | `1500` | Marcher analysis budget per AI turn |
+| `GAME_TTL_MS` | `7200000` | Idle games are discarded after this |
+| `PORT`, `HOST`, `STATIC_DIR` | `3000`, `0.0.0.0`, `dist` in production | Server |
+
+## API
+
+All writes are JSON, owned by an HttpOnly `SameSite=Strict` cookie, and checked against the request origin.
+
+- `POST /api/games` creates a game in the *ready* state and returns a snapshot.
+- `GET /api/games/:id` returns the current snapshot.
+- `GET /api/games/:id/events` streams server-sent snapshots.
+- `POST /api/games/:id/commands` takes `{ commandId, expectedVersion, command }`, where `command.type` is one of `start | move | pause | resume | restart | retry-ai`. A stale version returns 409 with the latest snapshot; a repeated `commandId` returns the original response.
+- `GET /api/health` reports whether Jev is configured and which model is in use. It never includes the key.
+
+## Layout
+
+`shared/rules` holds the rules core (standard 1–32 numbering, full jump paths). `shared/contracts` holds the Zod API schemas. `server/` contains the lifecycle reducer and store, the Jev client, the opponent, Marcher (vendored WASM, MIT, SHA-256 pinned) and Fastify. `client/` contains the React and three.js scene, the zustand store and the UI. `scripts/` has `selfplay.ts`, `screenshots.mjs` and diagnostics.
+
+## Known limits
+
+- **"Optimal" means practically optimal.** Marcher is a strong heuristic search, not an endgame-database solver, and Jev occasionally picks a lower-rated move (3 of 29 in the measured games). Those moves are tagged in the history.
+- Games live in server memory: a server restart ends them, and the client then offers a new game.
+- The `*.manus.computer` URL is a temporary sandbox forward. Running locally or on a host only needs the steps above.
+- Headless browsers without a GPU render at about 1 fps. The board uses on-demand rendering, so it draws nothing while idle and animates at full frame rate on real hardware.

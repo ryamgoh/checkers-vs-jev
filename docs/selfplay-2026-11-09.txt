@@ -1,0 +1,5 @@
+game 1: ivory by no-moves after 42 plies, 21 AI moves, 0 retries, 35 s
+game 2: ivory by no-moves after 46 plies, 23 AI moves, 0 retries, 35 s
+AI decisions (non-forced): 29; forced: 15
+latency ms: p50 2246, p95 2773, max 4154
+Jev matched the engine's top score: 26/29
