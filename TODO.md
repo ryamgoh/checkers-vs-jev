@@ -35,6 +35,9 @@ engine is Jev basically"), "CICD this, and then publish this", and the confirmed
   (`pnpm release`); each accepted `main` commit is a Manus checkpoint that can be published; the release flow is
   documented in the README. Hosting: default Autoscale (Reserved was declined; trade-off documented in the README).
 - [ ] **CI runs on GitHub.** The repository lives on GitHub so the Actions workflow runs on pushes and pull requests.
+  Done: the project repository is now `github.com/ryamgoh/checkers-vs-jev` (private, full history; switch verified at
+  06175cd). Remaining owner step: GitHub forbids the Manus App from writing `.github/workflows/`, so the owner moves
+  `ci/github-actions/ci.yml` to `.github/workflows/ci.yml` once (README, "Turn on GitHub Actions").
 - [x] **Published.** The game is published and plays end-to-end against live Jev there: version 62f8c56 at
   https://checkers-fhpj2xmn.manus.space (visibility: private to the owner until changed in the publish card).
   Live check with the client's event stream open: three Jev replies in 1.9–2.4 s, each with engine analysis and each
