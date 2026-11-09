@@ -4,6 +4,8 @@ A 3D American checkers game in the browser. You play red against **Jev**, which 
 
 ![Board after Jev's reply](docs/screenshots/desktop-5-replied.png)
 
+**Promo video:** [30-second promo](docs/promo/checkers-vs-jev-promo-30s.mp4). The clips, music and rebuild scripts are in [`docs/promo/`](docs/promo/README.md).
+
 ## Run it
 
 You need Node 22+ and pnpm. The OpenRouter key is read **only on the server** from the environment. It is never sent to the browser.
