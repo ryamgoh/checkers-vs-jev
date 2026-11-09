@@ -100,7 +100,8 @@ export async function buildApp(opts: AppOptions) {
   });
 
   if (opts.staticDir && fs.existsSync(path.join(opts.staticDir, 'index.html'))) {
-    await app.register(fastifyStatic, { root: path.resolve(opts.staticDir), wildcard: false });
+    // Wildcard serving resolves files per request, so rebuilt hashed assets need no restart.
+    await app.register(fastifyStatic, { root: path.resolve(opts.staticDir) });
     app.setNotFoundHandler((req, reply) => {
       if (req.url.startsWith('/api/')) return reply.code(404).send({ ok: false, error: 'not-found', message: 'Unknown endpoint.' });
       return reply.sendFile('index.html');

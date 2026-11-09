@@ -14,13 +14,10 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
-    "e2e": "playwright test",
-    "fetch:marcher": "node scripts/fetch-marcher.mjs"
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@fastify/static": "^10.1.10",
-    "@react-spring/three": "^10.1.2",
-    "@react-three/drei": "^10.7.9",
     "@react-three/fiber": "^9.8.2",
     "fastify": "^5.12.8",
     "react": "^19.3.1",
